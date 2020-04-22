@@ -45,7 +45,7 @@ class Helmholtz:
         elif (p == 2):
             print("Quadratic Shape Functions Selected")
         else:
-            raise Exception("Invalid polynomial chose. Please select p=1, 2 for linea, quadratic shape functions")
+            raise Exception("Invalid polynomial chose. Please select p=1, 2 for linear, quadratic shape functions")
         self.p = p
         
         # Define Shape Functions
@@ -179,11 +179,11 @@ class Helmholtz:
         stiff[0,0] = large
         rhs[0] = large*self.alpha
         
-        # Solving for the homogenous Solution
+        # Solving with matrix inversion
         u = np.zeros(self.n_dof)
         u = np.linalg.inv(stiff)@rhs
         
-        # Solution by adding Dirchlet Condition
+        # Setup grid        
         x = np.linspace(0,1,self.n_dof)
    
         # Computing Exact Solution
@@ -198,7 +198,12 @@ class Helmholtz:
         l2 = math.sqrt(l2/(len(x)))
         print("L2 Norm: " + str(l2) + '\n')
         
+        # Computing error distribution
+        err = np.zeros(self.n_dof)
+        err = np.abs(u_ex-u)
+        
         self.l2 = l2
+        self.err = err
         self.x = x
         self.u = u
         self.u_ex = u_ex
@@ -305,14 +310,66 @@ class Helmholtz:
         plt.figure()
         plt.loglog(1/NN_el, lin_err, '-o', label = 'Linear')
         plt.loglog(1/NN_el, quad_err, '-o', label = 'Quadratic')
-        plt.text(0.05, 0.0025, "Gradient: " + str("{:.2f}".format(m_lin)))
-        plt.text(0.05, 0.0000025, "Gradient: " + str("{:.2f}".format(m_quad)))
+        plt.text(0.05, 0.0025, "Gradient: " + str("{:.2f}".format(m_lin)), fontsize = 12)
+        plt.text(0.05, 0.0000025, "Gradient: " + str("{:.2f}".format(m_quad)), fontsize = 12)
         plt.title("L2-$norm$ vs Grid Size")
         plt.legend()
         plt.xlabel('Grid Size: log' + r'$\frac{1}{N_{el}}$ ', fontsize = 12)
         plt.ylabel('log(L2-$norm$) ', fontsize = 12)
+        plt.grid(which='minor')
+        plt.show()
+        
+    def AltErrorAnalysis(self, N_el):
+            
+        # Initialising problem for both linear and quad
+        lin = Helmholtz(N_el,1)
+        quad = Helmholtz(N_el,2)
+        
+        # Initialising phi/dphi values at Gauss-Lobatto quadrature points
+        lin.init_gauss_lobatto()
+        quad.init_gauss_lobatto()
+
+        
+        # Building Elemental Mass, Laplacian and Source matrices/vectors
+        [MElem_L, LElem_L, FElem_L] = lin.ConstructElem()
+        [MElem_Q, LElem_Q, FElem_Q] = quad.ConstructElem()
+       
+        # Constructing Global Mass, Laplacian and Source matrices/vectors
+        [MG_L, LG_L, FG_L] = lin.ConstructGlob(MElem_L, LElem_L, FElem_L)
+        [MG_Q, LG_Q, FG_Q] = quad.ConstructGlob(MElem_Q, LElem_Q, FElem_Q)
+       
+        # Assemble Stiffness matrix and solving Ax = b
+        # Dirichlet B.Cs are solved using "Method of Large Number"
+        lin.Solve(MG_L, LG_L, FG_L)
+        quad.Solve(MG_Q, LG_Q, FG_Q)
+        
+        # Plotting Error distribution
+        plt.figure()
+        plt.plot(lin.x, lin.err, '-ob', label = 'Linear')
+        plt.plot(quad.x, quad.err, '-or', label = 'Quadratic')
+        plt.title("Error distribution, |$u_{exact}$ - $u_{fem}$|" + '\n'+ "$N_el$ = " + str(N_el), fontsize = 16)
+        plt.legend()
+        plt.xlabel('x', fontsize = 16)
+        plt.ylabel('|$u_{exact}$ - $u_{fem}$|', fontsize = 16)
         plt.grid()
         plt.show()
+        
+        # Plotting Error distribution
+        plt.figure()
+        plt.plot(quad.x, quad.u_ex, '--g', label = 'Exact', linewidth = '4.5')
+        plt.plot(lin.x, lin.u, '-ob', label = 'Linear', linewidth = '2')
+        plt.plot(quad.x, quad.u, '-or', label = 'Quadratic', linewidth = '2')
+        plt.title("Solution comparison between Linear/Quadratic" + '\n'+ "$N_el$ = " + str(N_el), fontsize = 16)
+        plt.legend()
+        plt.xlabel('x', fontsize = 16)
+        plt.ylabel('u', fontsize = 16)
+        plt.grid()
+        plt.show()
+            
+            
+        
+
+        
         
 
         

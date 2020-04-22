@@ -11,7 +11,7 @@ from class_helmholtz import Helmholtz
 # Initialising Class with Helmholtz(N_el, p)
 # N_el -> No. of elements
 # P -> Polynomial order, p=1/2 for linear/quad
-case = Helmholtz(10, 1)
+case = Helmholtz(3, 2)
 
 # Initialising phi/dphi values at Gauss-Lobatto quadrature points
 case.init_gauss_lobatto()
@@ -30,3 +30,5 @@ case.Solve(MG, LG, FG)
 case.PlotOnce()
 
 case.ErrorAnalysis()
+
+case.AltErrorAnalysis(6)
