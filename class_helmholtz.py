@@ -13,6 +13,7 @@ from math import pi
 from math import cos
 
 class Helmholtz:
+    # Intialises class with No. of elements (N_el) and polynomial order (p)
     def __init__(self, N_el, p):
         
         # Initialises no. of elements
@@ -100,7 +101,9 @@ class Helmholtz:
         self.phi = phi
         self.dphi = dphi
      
-        
+    # Constructs Elemental Matrices and return them as output
+    # [MElem, LElem, FElem]  = case.ConstructElem()
+    
     def ConstructElem(self):
         """
         Constructing elemental matrices
@@ -134,6 +137,8 @@ class Helmholtz:
         
         return [MElem, LElem, FElem] 
 
+    # Builds Global Matrices with elemental matrices as input and return them as output
+    # [MG, LG, FG] = case.ConstructGlob(MElem, LElem, FElem):
     def ConstructGlob(self, MElem, LElem, FElem):
         
         MG = np.zeros((self.n_dof, self.n_dof))
@@ -167,7 +172,9 @@ class Helmholtz:
             connect = connect + self.p
         
         return [MG, LG, -FG]
-            
+    
+    # Solve the system of linear equations given LG, MG and MG
+    # Method of large numbers is used here for implementing B.Cs 
     def Solve(self, MG, LG, FG):
         
         # Setting up Stiff Matrix and RHS for the homogeneous problem
@@ -208,6 +215,7 @@ class Helmholtz:
         self.u = u
         self.u_ex = u_ex
     
+    # Plotting the solution for single case
     def PlotOnce(self):
         
         plt.close()
@@ -231,7 +239,9 @@ class Helmholtz:
         plt.legend()
         plt.grid()
         
-
+    
+    # Error Analysis for N_el = [5, 10, 20, 50, 100] in q4b
+    # Note that the single case have to be setup first
     def ErrorAnalysis(self):
         
         # Declaring an array of elements to be solved
@@ -239,7 +249,6 @@ class Helmholtz:
         lin_err = np.zeros(len(NN_el))
         quad_err = np.zeros(len(NN_el))
         
-        plt.figure()
         # Computing L2-norms for linear elements
         for i in range(len(NN_el)):
             linear = Helmholtz(NN_el[i],1)
@@ -259,20 +268,7 @@ class Helmholtz:
             
             lin_err[i] = linear.l2
             
-            # Plotting Results for All linear elements
-            plt.plot(linear.x, linear.u, '-', linewidth = '1', label = 'Grid Size: ' + str(linear.dx) )
-        
-        # Adding exact solution plot
-        plt.plot(linear.x, linear.u_ex, 'r--', linewidth = '1.6', label = "Exact Solution")
-        plt.title('Linear Elements')
-        plt.xlabel('x')
-        plt.ylabel('u')
-        plt.legend()
-        plt.grid()
-        
-        
         # Computing L2-norms for quadratic elements
-        plt.figure()
         for i in range(len(NN_el)):
             quad = Helmholtz(NN_el[i],2)
     
@@ -291,16 +287,6 @@ class Helmholtz:
             
             quad_err[i] = quad.l2
             
-            # Plotting All Quad elements
-            plt.plot(quad.x, quad.u, '-', linewidth = '1', label = 'Grid Size: ' + str(quad.dx) )
-        
-        # Adding exact solution plot
-        plt.plot(quad.x, quad.u_ex, 'r--', linewidth = '1.6', label = "Exact Solution")
-        plt.title('Quadratic Elements')
-        plt.xlabel('x')
-        plt.ylabel('u')
-        plt.legend()
-        plt.grid()
         
         # Getting slope and y-intercept of loglog graph
         m_lin, c_lin = np.polyfit(np.log(1/NN_el), np.log(lin_err), 1)   
@@ -312,13 +298,16 @@ class Helmholtz:
         plt.loglog(1/NN_el, quad_err, '-o', label = 'Quadratic')
         plt.text(0.05, 0.0025, "Gradient: " + str("{:.2f}".format(m_lin)), fontsize = 12)
         plt.text(0.05, 0.0000025, "Gradient: " + str("{:.2f}".format(m_quad)), fontsize = 12)
-        plt.title("L2-$norm$ vs Grid Size")
+        plt.title("Q4b) L2-$norm$ vs Grid Size")
         plt.legend()
         plt.xlabel('Grid Size: log' + r'$\frac{1}{N_{el}}$ ', fontsize = 12)
         plt.ylabel('log(L2-$norm$) ', fontsize = 12)
         plt.grid(which='minor')
         plt.show()
         
+    # Alternative Error Analysis for specified no. of elements in q4c
+    # Compares the error distribution between linear and quad elements
+    # Note that the single case have to be setup first
     def AltErrorAnalysis(self, N_el):
             
         # Initialising problem for both linear and quad
@@ -347,7 +336,7 @@ class Helmholtz:
         plt.figure()
         plt.plot(lin.x, lin.err, '-ob', label = 'Linear')
         plt.plot(quad.x, quad.err, '-or', label = 'Quadratic')
-        plt.title("Error distribution, |$u_{exact}$ - $u_{fem}$|" + '\n'+ "$N_el$ = " + str(N_el), fontsize = 16)
+        plt.title("Q4c) Error distribution, |$u_{exact}$ - $u_{fem}$|" + '\n'+ "$N_el$ = " + str(N_el), fontsize = 16)
         plt.legend()
         plt.xlabel('x', fontsize = 16)
         plt.ylabel('|$u_{exact}$ - $u_{fem}$|', fontsize = 16)
@@ -359,7 +348,7 @@ class Helmholtz:
         plt.plot(quad.x, quad.u_ex, '--g', label = 'Exact', linewidth = '4.5')
         plt.plot(lin.x, lin.u, '-ob', label = 'Linear', linewidth = '2')
         plt.plot(quad.x, quad.u, '-or', label = 'Quadratic', linewidth = '2')
-        plt.title("Solution comparison between Linear/Quadratic" + '\n'+ "$N_el$ = " + str(N_el), fontsize = 16)
+        plt.title("Q4c) Solution comparison between Linear/Quadratic" + '\n'+ "$N_el$ = " + str(N_el), fontsize = 16)
         plt.legend()
         plt.xlabel('x', fontsize = 16)
         plt.ylabel('u', fontsize = 16)
